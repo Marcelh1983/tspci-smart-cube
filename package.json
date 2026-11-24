@@ -1,0 +1,165 @@
+{
+  "name": "tspci-smart-cube",
+  "version": "1.0.0-alpha.1",
+  "description": "solve a scrambled Rubik's-type cube against the clock: a GiiKER smart cube over Web Bluetooth (or an on-screen cube) shown in 3D, a scramble from a seed with a guide, inspection countdown and solve timer",
+  "author": {
+    "name": "Marcel Hoekstra",
+    "url": "https://github.com/Marcelh1983"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/Marcelh1983/tspci-smart-cube#readme",
+  "bugs": "https://github.com/Marcelh1983/tspci-smart-cube/issues",
+  "keywords": [
+    "qti",
+    "qti3",
+    "pci",
+    "portable-custom-interaction",
+    "tspci",
+    "3d",
+    "smart cube",
+    "web bluetooth",
+    "speedcubing",
+    "timer"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Marcelh1983/tspci-smart-cube.git"
+  },
+  "files": [
+    "dist/index.js",
+    "dist/authoring.json",
+    "dist/sbom.cdx.json",
+    "dist/tao-pci-*.zip",
+    "smartCube.svg",
+    "example.png",
+    "README.md",
+    "LICENSE"
+  ],
+  "source": "src/index.tsx",
+  "main": "dist/index.js",
+  "devDependencies": {
+    "@citolab/preact-store": "3.0.1",
+    "@citolab/tspci": "3.0.1",
+    "@citolab/tspci-qti3": "3.0.1",
+    "@citolab/tspci-tao": "3.0.1",
+    "@storybook/addon-vitest": "^10.6.5",
+    "@storybook/html-vite": "^10.6.5",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@types/node": "^26.6.6",
+    "@types/three": "0.180.0",
+    "@vitest/browser-playwright": "^5.1.0",
+    "archiver": "7.0.1",
+    "autoprefixer": "10.4.23",
+    "playwright": "1.64.1",
+    "postcss": "^8.5.32",
+    "preact": "10.28.2",
+    "storybook": "^10.6.5",
+    "tailwindcss": "^4.1.18",
+    "three": "0.180.0",
+    "typescript": "5.9.3",
+    "vite": "^8.3.5",
+    "vitest": "^5.1.0"
+  },
+  "scripts": {
+    "dev": "tspci --dev",
+    "preprod": "npm test && npm run test:stories",
+    "prod": "tspci",
+    "watch": "tspci --watch",
+    "test": "node --no-warnings --test test/",
+    "package-tao": "tspci --target tao",
+    "package-qti3": "tspci --target qti3",
+    "prepack": "npm run prod && npm run package-tao",
+    "storybook": "storybook dev -p 6006",
+    "test:stories": "vitest run --project=storybook",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "config": {
+    "tspci": {
+      "typeIdentifier": "smartCube",
+      "label": "Smart cube",
+      "tags": [
+        "3d",
+        "smart cube",
+        "bluetooth",
+        "speedcubing"
+      ],
+      "scoring": [
+        "custom",
+        "human"
+      ],
+      "short": "smartCube",
+      "response": {
+        "cardinality": "record",
+        "$comment": "Nothing until the first attempt ends. score is 1 for a solve (with data-target-time: a solve that fast); time and moves are those of the fastest solve and absent without one (README)",
+        "fields": {
+          "score": {
+            "baseType": "integer",
+            "label": {
+              "en": "Score (0 or 1)",
+              "nl": "Score (0 of 1)"
+            }
+          },
+          "maxscore": {
+            "baseType": "integer",
+            "label": {
+              "en": "Maximum score (1)",
+              "nl": "Maximale score (1)"
+            }
+          },
+          "time": {
+            "baseType": "float",
+            "label": {
+              "en": "Fastest solve (seconds)",
+              "nl": "Snelste oplossing (seconden)"
+            }
+          },
+          "moves": {
+            "baseType": "integer",
+            "label": {
+              "en": "Turns in the fastest solve",
+              "nl": "Draaiingen in de snelste oplossing"
+            }
+          },
+          "solved": {
+            "baseType": "integer",
+            "label": {
+              "en": "Number of solves",
+              "nl": "Aantal oplossingen"
+            }
+          },
+          "attempts": {
+            "baseType": "integer",
+            "label": {
+              "en": "Number of attempts finished",
+              "nl": "Aantal afgeronde pogingen"
+            }
+          },
+          "seed": {
+            "baseType": "string",
+            "label": {
+              "en": "Scramble seed",
+              "nl": "Seed van de hussel"
+            }
+          },
+          "device": {
+            "baseType": "string",
+            "label": {
+              "en": "Cube used (giiker;virtual)",
+              "nl": "Gebruikte kubus (giiker;virtual)"
+            }
+          },
+          "results": {
+            "baseType": "string",
+            "label": {
+              "en": "Every attempt: scramble, time, turns, solution (JSON)",
+              "nl": "Elke poging: hussel, tijd, draaiingen, oplossing (JSON)"
+            }
+          }
+        }
+      }
+    }
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}

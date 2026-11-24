@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+:host {
+  display: block;
+}
+
+.sc-viewport {
+  cursor: grab;
+}
+.sc-viewport:active {
+  cursor: grabbing;
+}
