@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Smart cube PCI</title>
+    <meta name="description" content="Try the smart cube PCI: solve a scrambled cube against the clock, with a GiiKER Bluetooth cube or the on-screen cube." />
+    <link rel="icon" href="smartCube.svg" type="image/svg+xml" />
+    <style>
+      :root {
+        --bg: #f4f5f7;
+        --card: #ffffff;
+        --text: #1d2330;
+        --muted: #5b6475;
+        --line: #dde1e8;
+        --accent: #0046ad;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #14171d;
+          --text: #e7eaf0;
+          --muted: #a3abba;
+          --line: #2c323d;
+          --accent: #7aa7ff;
+          color-scheme: dark;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+      header { display: flex; gap: 14px; align-items: center; margin-bottom: 8px; }
+      header img { width: 44px; height: 44px; }
+      h1 { font-size: 1.6rem; margin: 0; }
+      p.intro { color: var(--muted); margin: 4px 0 20px; max-width: 70ch; }
+      a { color: var(--accent); }
+      form.options {
+        display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: end;
+        margin-bottom: 16px; font-size: 0.9rem; color: var(--muted);
+      }
+      form.options label { display: grid; gap: 4px; }
+      form.options input, form.options select, form.options button {
+        font: inherit; color: var(--text); background: var(--card);
+        border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px;
+      }
+      @media (prefers-color-scheme: dark) {
+        form.options input, form.options select, form.options button { background: #1d222b; }
+      }
+      form.options button { cursor: pointer; }
+      .pci {
+        background: #fff; color: #1d2330; color-scheme: light;
+        border: 1px solid var(--line); border-radius: 10px; padding: 16px;
+      }
+      details { margin-top: 16px; }
+      summary { cursor: pointer; color: var(--muted); }
+      pre {
+        background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+        padding: 12px; overflow: auto; font-size: 0.8rem; max-height: 320px;
+      }
+      @media (prefers-color-scheme: dark) { pre { background: #1d222b; } }
+      footer { margin-top: 28px; font-size: 0.85rem; color: var(--muted); }
+      .noscript { padding: 12px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <img src="smartCube.svg" alt="" />
+        <h1>Smart cube PCI</h1>
+      </header>
+      <p class="intro">
+        Scramble the cube with the turns shown, then solve it against the clock. Connect a GiiKER Bluetooth cube (Chrome
+        or Edge on a desktop or Android), or turn the on-screen cube: drag a face, or press U R F D L B (Shift for
+        counterclockwise). This is the QTI 3 portable custom interaction from
+        <a href="https://github.com/Marcelh1983/tspci-smart-cube">tspci-smart-cube</a>, running on its own in this page.
+      </p>
+
+      <form class="options" id="options">
+        <label>Seed
+          <input name="seed" placeholder="random" size="14" autocomplete="off" />
+        </label>
+        <label>Language
+          <select name="lang">
+            <option value="en">English</option>
+            <option value="nl">Nederlands</option>
+          </select>
+        </label>
+        <label>Inspection (s)
+          <input name="inspection" type="number" min="0" max="60" step="1" placeholder="15" style="width: 6em" />
+        </label>
+        <button type="submit">Start over</button>
+      </form>
+
+      <div class="pci" id="pci"><noscript><div class="noscript">This demo needs JavaScript.</div></noscript></div>
+
+      <details>
+        <summary>Response the PCI hands the QTI player</summary>
+        <pre id="response">Nothing yet: the response appears once the first attempt ends.</pre>
+      </details>
+
+      <footer>
+        The same seed gives the same scrambles (attempt 1 uses the seed, attempt 2 seed-2 and so on), so you can race
+        a friend: share the link after choosing a seed. MIT licence ·
+        <a href="https://github.com/Marcelh1983/tspci-smart-cube">source on GitHub</a>
+      </footer>
+    </main>
+
+    <script>
+      // What a QTI 3 player gives the PCI: qtiCustomInteractionContext, here the global the bundle (UMD) looks for.
+      // The bundle registers its PCI when it loads; this page then mounts it the way a player does (getInstance).
+      var registered;
+      window.ctx = { register: function (pci) { registered = pci; } };
+    </script>
+    <script src="index.js"></script>
+    <script>
+      (function () {
+        var params = new URLSearchParams(location.search);
+        var form = document.getElementById("options");
+        form.seed.value = params.get("seed") || "";
+        form.lang.value = params.get("lang") === "nl" ? "nl" : "en";
+        form.inspection.value = params.get("inspection") || "";
+        document.documentElement.lang = form.lang.value;
+
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          var next = new URLSearchParams();
+          if (form.seed.value.trim()) next.set("seed", form.seed.value.trim());
+          if (form.lang.value !== "en") next.set("lang", form.lang.value);
+          if (form.inspection.value !== "") next.set("inspection", form.inspection.value);
+          var query = next.toString();
+          location.href = location.pathname + (query ? "?" + query : "");
+        });
+
+        var host = document.getElementById("pci");
+        var output = document.getElementById("response");
+        if (!registered) {
+          host.textContent = "The PCI could not be loaded.";
+          return;
+        }
+        var properties = { language: form.lang.value };
+        if (form.seed.value) properties.seed = form.seed.value;
+        if (form.inspection.value !== "") properties.inspection = form.inspection.value;
+
+        var instance = new registered.constructor();
+        var show = function (event) {
+          var response = event.detail && event.detail.value;
+          if (!response) return;
+          output.textContent = JSON.stringify(response, null, 2);
+        };
+        host.addEventListener("qti-interaction-changed", show);
+        instance.getInstance(host, {
+          properties: properties,
+          responseIdentifier: "RESPONSE",
+          boundTo: {},
+          status: "interacting",
+          onready: function () {}
+        });
+      })();
+    </script>
+  </body>
+</html>
