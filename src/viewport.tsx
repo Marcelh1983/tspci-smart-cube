@@ -36,7 +36,7 @@ const ViewButton = ({ icon, label, onClick, pressed }: { icon: string; label: st
   </button>
 );
 
-export const Viewport = ({ facelets, move, height, texts: t, reducedMotion, onTurn, colours = COLOURS }: {
+export const Viewport = ({ facelets, move, height, texts: t, reducedMotion, onTurn, colours = COLOURS, preview }: {
   facelets: Facelets;
   /** The turn that made this cube (animated), or null. */
   move: { move: Move | null; id: number };
@@ -47,6 +47,8 @@ export const Viewport = ({ facelets, move, height, texts: t, reducedMotion, onTu
   onTurn: ((move: Move) => void) | null;
   /** The colours of the faces (coloursFor: white or yellow on top). */
   colours?: Colours;
+  /** A turn to show without making it (CubeView.preview), once per id. */
+  preview?: { move: Move | null; id: number };
 }) => {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<CubeView | null>(null);
@@ -82,6 +84,10 @@ export const Viewport = ({ facelets, move, height, texts: t, reducedMotion, onTu
   useLayoutEffect(() => {
     view.current?.show(facelets, move.move);
   }, [facelets, move.id, webgl]);
+
+  useLayoutEffect(() => {
+    if (preview?.move) view.current?.preview(preview.move);
+  }, [preview?.id]);
 
   const flip = () => {
     const next = !back;

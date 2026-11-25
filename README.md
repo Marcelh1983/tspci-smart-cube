@@ -36,7 +36,9 @@ The page is `demo/index.html`, published to GitHub Pages by `.github/workflows/p
 - **A guide through the scramble**: the moves as chips, done ones struck through, the next one highlighted, and what to
   turn now: "Next: R2". A half turn can be made in quarter turns either way. A wrong turn gives "Undo: L′"; the guide
   simplifies the turns to undo (R then R is R2, R L R′ is L). A cube that was not solved at the start gets "Solve it
-  first". The cube as it should become is shown unfolded.
+  first". The cube as it should become is shown unfolded. With a smart cube, *Show the next turn* plays that turn on
+  the screen and turns it back, so the candidate sees which way to turn; with the on-screen cube, *Scramble it for me*
+  makes the whole scramble.
 - **Start, inspection, solve**: once the cube is scrambled, *Start* (or the space bar) starts `data-inspection`
   seconds of inspection (15, as at a WCA competition; 0 for none). The clock starts at the first turn, or by itself
   when the inspection is over. It stops when the cube is solved and shows the time, the number of turns and the turns

@@ -329,6 +329,65 @@ export const ResponseBack: Story = {
   },
 };
 
+/**
+ * A stand-in for Web Bluetooth with a GiiKER cube that is solved and stays so: enough to connect. Returns the function
+ * that puts the browser's own back.
+ */
+const fakeGiiker = () => {
+  // corners 1–8 in place (orientation 3), edges 1–12 in place (not flipped), no turns yet; not encrypted
+  const solved = new Uint8Array([0x12, 0x34, 0x56, 0x78, 0x33, 0x33, 0x33, 0x33, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0, 0, 0, 0, 0, 0]);
+  const characteristic = {
+    readValue: async () => new DataView(solved.buffer),
+    addEventListener: () => {},
+    startNotifications: async () => {},
+  };
+  const device = {
+    name: "GiS-test",
+    addEventListener: () => {},
+    gatt: {
+      connect: async () => ({ getPrimaryService: async () => ({ getCharacteristic: async () => characteristic }) }),
+      disconnect: () => {},
+    },
+  };
+  const had = Object.getOwnPropertyDescriptor(navigator, "bluetooth");
+  Object.defineProperty(navigator, "bluetooth", { value: { requestDevice: async () => device }, configurable: true });
+  return () => {
+    delete (navigator as any).bluetooth;
+    if (had) Object.defineProperty(navigator, "bluetooth", had);
+  };
+};
+
+export const ShowTheNextTurn: Story = {
+  args: { properties: { seed: "show" } },
+  play: async ({ canvasElement, step }) => {
+    const mounted = await openPci(canvasElement);
+    const { canvas, pci } = mounted;
+    const restore = fakeGiiker();
+    try {
+      await step("with a smart cube connected there is no Scramble it for me, but Show the next turn", async () => {
+        await userEvent.click(canvas.getByRole("button", { name: "Connect smart cube" }));
+        await waitFor(() => expect(canvas.getByRole("button", { name: "Show the next turn" })).toBeInTheDocument());
+        expect(canvas.queryByRole("button", { name: "Scramble it for me" })).toBeNull();
+        expect(canvas.getByTestId("hint")).toHaveTextContent(`Next: ${formatMoves([scrambleFor("show", 20)[0]])}`);
+      });
+      await step("it turns the layer on the screen and back, without changing the cube or the guide", async () => {
+        const before = pci.cube().facelets();
+        await userEvent.click(canvas.getByRole("button", { name: "Show the next turn" }));
+        const view = pci.view();
+        if (view) {
+          await waitFor(() => expect(view.previewing).toBe(true));
+          await waitFor(() => expect(view.previewing).toBe(false), { timeout: 4000 });
+          expect(view.painted).toBe(before);
+        }
+        expect(pci.cube().facelets()).toBe(before);
+        expect(pci.cube().attempt().guide.done).toBe(0);
+      });
+    } finally {
+      restore();
+    }
+  },
+};
+
 export const NoBluetooth: Story = {
   args: { properties: { allowVirtual: "false" } },
   play: async ({ canvasElement, step }) => {

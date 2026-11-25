@@ -53,6 +53,9 @@ const Interaction = ({ prompt, settings: s, store, texts: t, readOnly, seed, con
   deviceRef.current = device;
   const inspectionMs = s.inspection * 1000;
   const colours = coloursFor(s.top);
+  // a turn shown on the cube without making it: the next of the scramble, for the candidate with a smart cube in hand
+  const [preview, setPreview] = useState<{ move: Move | null; id: number }>({ move: null, id: 0 });
+  const show = (move: Move) => setPreview((p) => ({ move, id: p.id + 1 }));
 
   const results = state.results;
   const remaining = s.attempts - results.length;
@@ -274,7 +277,7 @@ const Interaction = ({ prompt, settings: s, store, texts: t, readOnly, seed, con
       {message && <p data-testid="message" role="alert" className="m-0 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-950 ring-1 ring-amber-200">{message}</p>}
 
       <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-        <Viewport facelets={faceletsRef.current} move={lastMove.current} height={s.height} texts={t} reducedMotion={reducedMotion} colours={colours}
+        <Viewport facelets={faceletsRef.current} move={lastMove.current} height={s.height} texts={t} reducedMotion={reducedMotion} colours={colours} preview={preview}
           onTurn={device?.kind === "virtual" && !readOnly ? turn : null} />
 
         <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4" data-testid="panel">
@@ -286,7 +289,7 @@ const Interaction = ({ prompt, settings: s, store, texts: t, readOnly, seed, con
               </div>
 
               {(attempt.phase === "scramble" || attempt.phase === "ready") && (
-                <ScramblePanel attempt={attempt} texts={t} virtual={device?.kind === "virtual"} onReset={() => onCube(null, SOLVED)} onScramble={scrambleForMe} colours={colours} />
+                <ScramblePanel attempt={attempt} texts={t} virtual={device?.kind === "virtual"} onReset={() => onCube(null, SOLVED)} onScramble={scrambleForMe} onShow={show} colours={colours} />
               )}
               {attempt.phase === "ready" && (
                 <div className="flex flex-col gap-2">
@@ -358,12 +361,14 @@ const Interaction = ({ prompt, settings: s, store, texts: t, readOnly, seed, con
 };
 
 /** The scramble as chips (done, now, to come), what to turn next, and the cube as it should become. */
-const ScramblePanel = ({ attempt: a, texts: t, virtual, onReset, onScramble, colours }: {
+const ScramblePanel = ({ attempt: a, texts: t, virtual, onReset, onScramble, onShow, colours }: {
   attempt: Attempt;
   texts: Texts;
   virtual: boolean;
   onReset: () => void;
   onScramble: () => void;
+  /** Shows a turn on the cube without making it (the smart cube). */
+  onShow: (move: Move) => void;
   colours: Colours;
 }) => {
   const hint = hintOf(a.scramble, a.guide);
@@ -395,6 +400,9 @@ const ScramblePanel = ({ attempt: a, texts: t, virtual, onReset, onScramble, col
         </p>
       ) : null}
       {a.phase === "scramble" && virtual && !a.guide.lost && <button type="button" className={secondary} onClick={onScramble}>{t.scrambleForMe}</button>}
+      {a.phase === "scramble" && !virtual && !a.guide.lost && hint && (
+        <button type="button" className={secondary} onClick={() => onShow(hint.moves[0])}>{hint.undo ? t.showUndo : t.showNext}</button>
+      )}
       <div className="flex justify-center">
         <Net facelets={applyMoves(SOLVED, a.scramble)} cell={14} label={t.target} testId="target" colours={colours} />
       </div>

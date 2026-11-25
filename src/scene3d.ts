@@ -34,7 +34,16 @@ const roundedSquare = (size: number, radius: number) => {
   return new ShapeGeometry(s, 4);
 };
 
-type Animation = { pivot: Group; cubies: Group[]; axis: Vector3; angle: number; start: number; duration: number; target: Facelets };
+type Animation = {
+  pivot: Group; cubies: Group[]; axis: Vector3; angle: number; start: number; duration: number; target: Facelets;
+  /** A preview: the layer turns, stays a while and turns back; the colours do not change. */
+  preview?: boolean;
+};
+
+/** A preview: turn (to TURN_END), hold (to HOLD_END), turn back, as fractions of PREVIEW_MS. */
+const PREVIEW_MS = 2000;
+const TURN_END = 0.3;
+const HOLD_END = 0.7;
 
 export class CubeView {
   readonly canvas: HTMLCanvasElement;
@@ -139,6 +148,34 @@ export class CubeView {
       target: facelets,
     };
     this.requestRender();
+  }
+
+  /**
+   * Shows a turn without making it: the layer turns, stays turned a while and turns back (the next turn of a scramble,
+   * for the candidate with a smart cube in hand). A real turn, or another preview, ends it.
+   */
+  preview(move: Move) {
+    this.finish();
+    if (!this.facelets) return;
+    const pivot = new Group();
+    this.world.add(pivot);
+    const cubies = layerOf(move.face).map((p) => this.cubies.get(placeKey(p))!);
+    for (const c of cubies) pivot.add(c);
+    this.animation = {
+      pivot, cubies,
+      axis: new Vector3(...NORMAL[move.face]),
+      angle: move.amount === 3 ? Math.PI / 2 : (-Math.PI / 2) * move.amount,
+      start: performance.now(),
+      duration: PREVIEW_MS,
+      target: this.facelets,
+      preview: true,
+    };
+    this.requestRender();
+  }
+
+  /** Whether a preview is running (for tests). */
+  get previewing(): boolean {
+    return !!this.animation?.preview;
   }
 
   /** Ends a running animation: the cubies back in their places, the colours of after. */
@@ -288,8 +325,11 @@ export class CubeView {
     const a = this.animation;
     if (a) {
       const t = Math.min(1, (performance.now() - a.start) / a.duration);
-      const eased = 1 - (1 - t) * (1 - t);
-      a.pivot.quaternion.setFromAxisAngle(a.axis, a.angle * eased);
+      const ease = (x: number) => (this.reducedMotion ? Math.round(x) : x < 0.5 ? 2 * x * x : 1 - 2 * (1 - x) * (1 - x));
+      // a preview with reduced motion jumps to the turned layer and back, without moving in between
+      const amount = !a.preview ? 1 - (1 - t) * (1 - t)
+        : t < TURN_END ? ease(t / TURN_END) : t < HOLD_END ? 1 : 1 - ease((t - HOLD_END) / (1 - HOLD_END));
+      a.pivot.quaternion.setFromAxisAngle(a.axis, a.angle * amount);
       if (t >= 1) this.finish();
       else this.requestRender();
     }
