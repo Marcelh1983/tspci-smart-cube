@@ -8,10 +8,14 @@ import {
   Scene, Shape, ShapeGeometry, Spherical, Vector2, Vector3, WebGLRenderer,
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { Face, Facelets, Move, NORMAL, STICKERS, applyMove, layerOf } from "./cube";
+import { Face, Facelets, Move, NORMAL, STICKERS, Top, applyMove, layerOf } from "./cube";
 
+export type Colours = Record<Face, string>;
 /** The colours of the faces of a standard cube: white on top, green in front, red on the right. */
-export const COLOURS: Record<Face, string> = { U: "#f8fafc", R: "#c8102e", F: "#009b48", D: "#ffd500", L: "#ff6a13", B: "#0046ad" };
+export const COLOURS: Colours = { U: "#f8fafc", R: "#c8102e", F: "#009b48", D: "#ffd500", L: "#ff6a13", B: "#0046ad" };
+/** The colours of the faces as the candidate holds the cube: with yellow on top (z2), orange is on the right. */
+export const coloursFor = (top: Top): Colours =>
+  top === "yellow" ? { U: COLOURS.D, R: COLOURS.L, F: COLOURS.F, D: COLOURS.U, L: COLOURS.R, B: COLOURS.B } : COLOURS;
 
 const placeKey = (p: readonly number[]) => p.join(",");
 
@@ -54,7 +58,7 @@ export class CubeView {
   /** Set: dragging a sticker turns its face and tells this; null: dragging only moves the camera. */
   onTurn: ((move: Move) => void) | null = null;
 
-  constructor(private host: HTMLElement) {
+  constructor(private host: HTMLElement, private colours: Colours = COLOURS) {
     this.renderer = new WebGLRenderer({ antialias: true, alpha: true }); // throws without WebGL
     this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     this.renderer.setClearColor(0x000000, 0);
@@ -83,7 +87,7 @@ export class CubeView {
       this.world.add(cubie);
     }
     STICKERS.forEach((s, i) => {
-      const material = new MeshStandardMaterial({ color: COLOURS[s.face], roughness: 0.32 });
+      const material = new MeshStandardMaterial({ color: this.colours[s.face], roughness: 0.32 });
       const mesh = new Mesh(sticker, material);
       const normal = new Vector3(...s.normal);
       mesh.position.copy(normal).multiplyScalar(0.487);
@@ -150,7 +154,7 @@ export class CubeView {
 
   private paint(facelets: Facelets) {
     this.facelets = facelets;
-    for (let i = 0; i < 54; i++) this.stickers[i].color.set(COLOURS[facelets[i] as Face] ?? "#888888");
+    for (let i = 0; i < 54; i++) this.stickers[i].color.set(this.colours[facelets[i] as Face] ?? "#888888");
   }
 
   // ---- turning a face by dragging a sticker ------------------------------------------------------------------------

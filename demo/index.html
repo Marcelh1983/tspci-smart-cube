@@ -90,6 +90,12 @@
             <option value="nl">Nederlands</option>
           </select>
         </label>
+        <label>On top
+          <select name="top">
+            <option value="white">White</option>
+            <option value="yellow">Yellow</option>
+          </select>
+        </label>
         <label>Inspection (s)
           <input name="inspection" type="number" min="0" max="60" step="1" placeholder="15" style="width: 6em" />
         </label>
@@ -124,6 +130,7 @@
         form.seed.value = params.get("seed") || "";
         form.lang.value = params.get("lang") === "nl" ? "nl" : "en";
         form.inspection.value = params.get("inspection") || "";
+        form.top.value = params.get("top") === "yellow" ? "yellow" : "white";
         document.documentElement.lang = form.lang.value;
 
         form.addEventListener("submit", function (event) {
@@ -132,6 +139,7 @@
           if (form.seed.value.trim()) next.set("seed", form.seed.value.trim());
           if (form.lang.value !== "en") next.set("lang", form.lang.value);
           if (form.inspection.value !== "") next.set("inspection", form.inspection.value);
+          if (form.top.value !== "white") next.set("top", form.top.value);
           var query = next.toString();
           location.href = location.pathname + (query ? "?" + query : "");
         });
@@ -142,7 +150,7 @@
           host.textContent = "The PCI could not be loaded.";
           return;
         }
-        var properties = { language: form.lang.value };
+        var properties = { language: form.lang.value, top: form.top.value };
         if (form.seed.value) properties.seed = form.seed.value;
         if (form.inspection.value !== "") properties.inspection = form.inspection.value;
 

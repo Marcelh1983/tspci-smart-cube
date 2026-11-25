@@ -43,6 +43,16 @@
     "editor": "boolean",
     "label": { "en": "Allow the on-screen cube (without a smart cube)", "nl": "Kubus op het scherm toestaan (zonder slimme kubus)" }
   },
+  "top": {
+    "default": "white",
+    "editor": "enum",
+    "options": [
+      { "value": "white", "label": { "en": "White", "nl": "Wit" } },
+      { "value": "yellow", "label": { "en": "Yellow", "nl": "Geel" } }
+    ],
+    "label": { "en": "Colour on top (green in front)", "nl": "Kleur bovenop (groen voor)" },
+    "$comment": "yellow: the cube held turned over (z2), as many speedcubers solve; scrambles and the guide are in that orientation, and a GiiKER cube's turns are read so"
+  },
   "height": {
     "default": "380",
     "editor": "integer",

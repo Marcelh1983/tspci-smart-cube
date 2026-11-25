@@ -1,7 +1,7 @@
 // The connection with a GiiKER smart cube over Web Bluetooth (Chrome and Edge on desktop and Android; not Safari or
 // Firefox). The page must be https or localhost, and an iframe needs allow="bluetooth". requestDevice must run in the
 // click handler of the candidate (the browser shows its own list of devices).
-import { Facelets, GIIKER, Move, giikerDecode, moveBetween } from "./cube";
+import { Facelets, GIIKER, Move, Top, giikerDecode, heldAs, moveBetween } from "./cube";
 
 export type CubeChange = { move: Move | null; facelets: Facelets; time: number };
 
@@ -16,7 +16,13 @@ export class GiikerCube {
   private characteristic: any;
   private facelets: Facelets | null = null;
 
-  private constructor(private onChange: (change: CubeChange) => void, private onDisconnect: () => void) {}
+  private constructor(private onChange: (change: CubeChange) => void, private onDisconnect: () => void, private top: Top) {}
+
+  /** The stickers of a message as the candidate holds the cube (the cube itself reports them with white on top). */
+  private decode(data: Uint8Array): Facelets | null {
+    const decoded = giikerDecode(data);
+    return decoded ? heldAs(decoded.facelets, this.top) : null;
+  }
 
   get name(): string {
     return this.device?.name ?? "GiiKER";
@@ -24,11 +30,12 @@ export class GiikerCube {
 
   /**
    * Asks the browser for a cube (its own dialog), connects and reads the cube as it is. Rejects with "cancelled" when
-   * the candidate closes the dialog, and with the browser's error otherwise.
+   * the candidate closes the dialog, and with the browser's error otherwise. The stickers and turns it reports are as
+   * seen with `top` on top.
    */
-  static async connect(onChange: (change: CubeChange) => void, onDisconnect: () => void): Promise<{ cube: GiikerCube; facelets: Facelets }> {
+  static async connect(onChange: (change: CubeChange) => void, onDisconnect: () => void, top: Top = "white"): Promise<{ cube: GiikerCube; facelets: Facelets }> {
     const bluetooth = (navigator as any).bluetooth;
-    const cube = new GiikerCube(onChange, onDisconnect);
+    const cube = new GiikerCube(onChange, onDisconnect, top);
     let device: any;
     try {
       device = await bluetooth.requestDevice({
@@ -45,15 +52,15 @@ export class GiikerCube {
     const server = await device.gatt.connect();
     const service = await server.getPrimaryService(GIIKER.service);
     cube.characteristic = await service.getCharacteristic(GIIKER.characteristic);
-    const first = giikerDecode(new Uint8Array((await cube.characteristic.readValue()).buffer));
+    const first = cube.decode(new Uint8Array((await cube.characteristic.readValue()).buffer));
     if (!first) {
       device.gatt.disconnect();
       throw new Error("not a cube");
     }
-    cube.facelets = first.facelets;
+    cube.facelets = first;
     cube.characteristic.addEventListener("characteristicvaluechanged", (event: any) => cube.receive(event.target.value));
     await cube.characteristic.startNotifications();
-    return { cube, facelets: first.facelets };
+    return { cube, facelets: first };
   }
 
   /**
@@ -61,11 +68,11 @@ export class GiikerCube {
    * missed and more than one turn makes the difference). A repeat of the same cube is no change.
    */
   private receive(value: DataView) {
-    const decoded = giikerDecode(new Uint8Array(value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength)));
-    if (!decoded || decoded.facelets === this.facelets) return;
+    const facelets = this.decode(new Uint8Array(value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength)));
+    if (!facelets || facelets === this.facelets) return;
     const before = this.facelets;
-    this.facelets = decoded.facelets;
-    this.onChange({ move: before ? moveBetween(before, decoded.facelets) : null, facelets: decoded.facelets, time: performance.now() });
+    this.facelets = facelets;
+    this.onChange({ move: before ? moveBetween(before, facelets) : null, facelets, time: performance.now() });
   }
 
   disconnect() {

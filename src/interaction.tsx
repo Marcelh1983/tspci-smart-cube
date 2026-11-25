@@ -9,6 +9,7 @@ import { Settings } from "./settings";
 import { Actions, Result, StateModel } from "./store";
 import { Texts, localTime } from "./texts";
 import { Net, Viewport, usePrefersReducedMotion } from "./viewport";
+import { Colours, coloursFor } from "./scene3d";
 
 // The candidate's view: the cube (a GiiKER over Bluetooth, or the on-screen cube), and next to it what to do now:
 // follow the scramble, start, inspect, solve. Below, the results of the attempts.
@@ -51,6 +52,7 @@ const Interaction = ({ prompt, settings: s, store, texts: t, readOnly, seed, con
   const deviceRef = useRef<Device | null>(null);
   deviceRef.current = device;
   const inspectionMs = s.inspection * 1000;
+  const colours = coloursFor(s.top);
 
   const results = state.results;
   const remaining = s.attempts - results.length;
@@ -75,6 +77,7 @@ const Interaction = ({ prompt, settings: s, store, texts: t, readOnly, seed, con
       inspection: a.inspectionStart !== null && a.solveStart !== null ? Math.round(a.solveStart - a.inspectionStart) : 0,
       solution: formatMoves(a.solution),
       device: deviceRef.current?.kind ?? "virtual",
+      top: s.top,
     };
     store.dispatch({ type: "RESULT", payload: { result } });
     setAnnouncement(solved ? t.announce.solved(localTime(formatTime(result.time ?? 0), s.language), result.moves) : t.announce.dnf);
@@ -133,7 +136,8 @@ const Interaction = ({ prompt, settings: s, store, texts: t, readOnly, seed, con
         if (deviceRef.current?.kind !== "giiker") return;
         setDevice(fallback());
         setMessage(t.disconnected);
-      }
+      },
+      s.top
     )
       .then(({ cube, facelets }) => connected({ kind: "giiker", cube }, facelets, cube.name))
       .catch((error: Error) => {
@@ -270,7 +274,7 @@ const Interaction = ({ prompt, settings: s, store, texts: t, readOnly, seed, con
       {message && <p data-testid="message" role="alert" className="m-0 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-950 ring-1 ring-amber-200">{message}</p>}
 
       <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-        <Viewport facelets={faceletsRef.current} move={lastMove.current} height={s.height} texts={t} reducedMotion={reducedMotion}
+        <Viewport facelets={faceletsRef.current} move={lastMove.current} height={s.height} texts={t} reducedMotion={reducedMotion} colours={colours}
           onTurn={device?.kind === "virtual" && !readOnly ? turn : null} />
 
         <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4" data-testid="panel">
@@ -282,7 +286,7 @@ const Interaction = ({ prompt, settings: s, store, texts: t, readOnly, seed, con
               </div>
 
               {(attempt.phase === "scramble" || attempt.phase === "ready") && (
-                <ScramblePanel attempt={attempt} texts={t} virtual={device?.kind === "virtual"} onReset={() => onCube(null, SOLVED)} onScramble={scrambleForMe} />
+                <ScramblePanel attempt={attempt} texts={t} virtual={device?.kind === "virtual"} onReset={() => onCube(null, SOLVED)} onScramble={scrambleForMe} colours={colours} />
               )}
               {attempt.phase === "ready" && (
                 <div className="flex flex-col gap-2">
@@ -328,7 +332,7 @@ const Interaction = ({ prompt, settings: s, store, texts: t, readOnly, seed, con
                     </div>
                     <p className="m-0 text-sm text-slate-600">{t.scramble}: <span className="font-mono font-semibold text-slate-800">{formatMoves(upcoming)}</span></p>
                     <div className="flex justify-center">
-                      <Net facelets={applyMoves(SOLVED, upcoming)} cell={14} label={t.target} />
+                      <Net facelets={applyMoves(SOLVED, upcoming)} cell={14} label={t.target} colours={colours} />
                     </div>
                   </>
                 );
@@ -354,12 +358,13 @@ const Interaction = ({ prompt, settings: s, store, texts: t, readOnly, seed, con
 };
 
 /** The scramble as chips (done, now, to come), what to turn next, and the cube as it should become. */
-const ScramblePanel = ({ attempt: a, texts: t, virtual, onReset, onScramble }: {
+const ScramblePanel = ({ attempt: a, texts: t, virtual, onReset, onScramble, colours }: {
   attempt: Attempt;
   texts: Texts;
   virtual: boolean;
   onReset: () => void;
   onScramble: () => void;
+  colours: Colours;
 }) => {
   const hint = hintOf(a.scramble, a.guide);
   return (
@@ -391,7 +396,7 @@ const ScramblePanel = ({ attempt: a, texts: t, virtual, onReset, onScramble }: {
       ) : null}
       {a.phase === "scramble" && virtual && !a.guide.lost && <button type="button" className={secondary} onClick={onScramble}>{t.scrambleForMe}</button>}
       <div className="flex justify-center">
-        <Net facelets={applyMoves(SOLVED, a.scramble)} cell={14} label={t.target} testId="target" />
+        <Net facelets={applyMoves(SOLVED, a.scramble)} cell={14} label={t.target} testId="target" colours={colours} />
       </div>
     </div>
   );

@@ -11,6 +11,8 @@ export type Result = {
   inspection: number;
   solution: string;
   device: "giiker" | "virtual";
+  /** The colour on top: the scramble and solution are as seen so (absent in results from before this setting: white). */
+  top?: "white" | "yellow";
 };
 
 /** The actions, as { type: payload }: dispatch and addReducer only accept these. */
@@ -48,6 +50,7 @@ const validResult = (r: any): Result | null => {
     inspection: typeof r.inspection === "number" && r.inspection >= 0 ? r.inspection : 0,
     solution,
     device: r.device === "giiker" ? "giiker" : "virtual",
+    ...(r.top === "yellow" ? { top: "yellow" as const } : {}),
   };
 };
 

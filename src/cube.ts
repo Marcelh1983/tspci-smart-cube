@@ -11,7 +11,8 @@ export type Move = { face: Face; amount: 1 | 2 | 3 };
 /**
  * The stickers, 9 per face in the order U R F D L B, each face row by row as seen from outside: U with B at the top,
  * D with F at the top, the side faces with U at the top (the order of Kociemba and cubejs). A sticker holds the face
- * its colour belongs to: "U" is white, whatever way the candidate holds the cube.
+ * its colour belongs to, with the cube held the way the candidate holds it: "U" is the colour on top (white, or yellow
+ * with Top "yellow"; the view picks the colours, coloursFor in scene3d.ts).
  */
 export type Facelets = string;
 export const SOLVED: Facelets = FACES.map((f) => f.repeat(9)).join("");
@@ -85,6 +86,31 @@ export const applyMove = (facelets: Facelets, move: Move): Facelets => {
 };
 
 export const applyMoves = (facelets: Facelets, moves: Move[]): Facelets => moves.reduce(applyMove, facelets);
+
+// ---- holding the cube with yellow on top ----------------------------------------------------------------------------
+
+/** The colour the candidate holds on top: white (green in front), or yellow (green in front: the cube turned over, z2). */
+export type Top = "white" | "yellow";
+export const TOPS: Top[] = ["white", "yellow"];
+export const topOf = (v: unknown): Top => (String(v ?? "").toLowerCase() === "yellow" ? "yellow" : "white");
+
+/** z2, a half turn about the F axis: U and D swap, R and L swap, F and B stay. */
+const Z2_FACE: Record<Face, Face> = { U: "D", D: "U", R: "L", L: "R", F: "F", B: "B" };
+const z2 = (v: V3): V3 => [0 - v[0], 0 - v[1], v[2]];
+/** Z2_TARGET[i]: where sticker i goes when the cube is turned over. */
+const Z2_TARGET = STICKERS.map((s) => STICKER_INDEX.get(keyOf(z2(s.position), z2(s.normal)))!);
+
+/**
+ * A cube as seen with white on top (a GiiKER cube always reports it so) as seen with this top, and a turn of it. z2 is
+ * its own inverse, so the same functions turn it back.
+ */
+export const heldAs = (facelets: Facelets, top: Top): Facelets => {
+  if (top === "white") return facelets;
+  const cells: string[] = new Array(54);
+  facelets.split("").forEach((c, i) => (cells[Z2_TARGET[i]] = Z2_FACE[c as Face] ?? c));
+  return cells.join("");
+};
+export const moveHeldAs = (move: Move, top: Top): Move => (top === "white" ? move : { face: Z2_FACE[move.face], amount: move.amount });
 
 // ---- notation -------------------------------------------------------------------------------------------------------
 

@@ -12,7 +12,7 @@ candidate presses Start: an inspection countdown, then a timer that stops when t
 [tspci](https://github.com/Citolab/tspci).
 
 **[Try it in your browser](https://marcelh1983.github.io/tspci-smart-cube/)**: the demo page runs the PCI on its own,
-with the on-screen cube or a GiiKER cube (Chrome or Edge). Add `?seed=…` to the address to share the same scrambles.
+with the on-screen cube or a GiiKER cube (Chrome or Edge). Add `?seed=…` to the address to share the same scrambles, `&top=yellow` to hold it with yellow on top.
 The page is `demo/index.html`, published to GitHub Pages by `.github/workflows/pages.yml` on every push to `main`.
 
 <p align="center">
@@ -58,6 +58,7 @@ The page is `demo/index.html`, published to GitHub Pages by `.github/workflows/p
 | `data-attempts` | `3` | number of attempts (1–12) |
 | `data-target-time` | `0` | seconds: a solve this fast or faster scores 1; 0: any solve scores 1 |
 | `data-allow-virtual` | `true` | the on-screen cube when no smart cube is connected |
+| `data-top` | `white` | the colour on top, green in front: `white`, or `yellow` (the cube turned over, as many speedcubers hold it; scrambles, the guide and the solution are as seen so, and a GiiKER cube's turns are read so) |
 | `data-height` | `380` | height of the 3D view in pixels |
 | `data-language` | `en` | `en` or `nl` |
 
@@ -75,7 +76,7 @@ Nothing until the first attempt ends. Then a `record` (`"scoring": ["custom", "h
 | `attempts` | integer | the number of attempts finished |
 | `seed` | string | the seed of the scrambles |
 | `device` | string | `giiker`, `virtual` or both (`giiker;virtual`) |
-| `results` | string | every attempt as JSON: seed, scramble, time (ms, null for DNF), moves, inspection (ms), solution, device |
+| `results` | string | every attempt as JSON: seed, scramble, time (ms, null for DNF), moves, inspection (ms), solution, device, top (only when `yellow`) |
 
 Response processing can use `score`, or set its own limits on `time`; an item that needs the real cube can check
 `device`. The `results` field brings the attempts back with `setResponse`.

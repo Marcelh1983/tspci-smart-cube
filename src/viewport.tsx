@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import { FACES, Face, Facelets, Move } from "./cube";
-import { COLOURS, CubeView } from "./scene3d";
+import { COLOURS, Colours, CubeView } from "./scene3d";
 import { Texts } from "./texts";
 
 // The cube in the page: the 3D view (CubeView) with buttons to turn the view, or the net without WebGL. The view
@@ -10,12 +10,12 @@ import { Texts } from "./texts";
 const NET: Record<Face, [number, number]> = { U: [3, 0], L: [0, 3], F: [3, 3], R: [6, 3], B: [9, 3], D: [3, 6] };
 
 /** The cube unfolded: U on top, L F R B in a row, D below. */
-export const Net = ({ facelets, cell = 12, label, testId }: { facelets: Facelets; cell?: number; label: string; testId?: string }) => (
+export const Net = ({ facelets, cell = 12, label, testId, colours = COLOURS }: { facelets: Facelets; cell?: number; label: string; testId?: string; colours?: Colours }) => (
   <svg viewBox="-0.1 -0.1 12.2 9.2" width={12 * cell} height={9 * cell} role="img" aria-label={label} data-testid={testId} className="block max-w-full h-auto">
     {FACES.map((face, f) =>
       Array.from({ length: 9 }, (_, i) => (
         <rect key={`${face}${i}`} x={NET[face][0] + (i % 3) + 0.05} y={NET[face][1] + Math.floor(i / 3) + 0.05} width={0.9} height={0.9} rx={0.14}
-          fill={COLOURS[facelets[f * 9 + i] as Face] ?? "#94a3b8"} stroke="#1e293b" stroke-width={0.05} />
+          fill={colours[facelets[f * 9 + i] as Face] ?? "#94a3b8"} stroke="#1e293b" stroke-width={0.05} />
       ))
     )}
   </svg>
@@ -36,7 +36,7 @@ const ViewButton = ({ icon, label, onClick, pressed }: { icon: string; label: st
   </button>
 );
 
-export const Viewport = ({ facelets, move, height, texts: t, reducedMotion, onTurn }: {
+export const Viewport = ({ facelets, move, height, texts: t, reducedMotion, onTurn, colours = COLOURS }: {
   facelets: Facelets;
   /** The turn that made this cube (animated), or null. */
   move: { move: Move | null; id: number };
@@ -45,6 +45,8 @@ export const Viewport = ({ facelets, move, height, texts: t, reducedMotion, onTu
   reducedMotion: boolean;
   /** The on-screen cube: dragging a sticker turns its face. */
   onTurn: ((move: Move) => void) | null;
+  /** The colours of the faces (coloursFor: white or yellow on top). */
+  colours?: Colours;
 }) => {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<CubeView | null>(null);
@@ -54,7 +56,7 @@ export const Viewport = ({ facelets, move, height, texts: t, reducedMotion, onTu
   useLayoutEffect(() => {
     if (!host.current) return;
     try {
-      view.current = new CubeView(host.current);
+      view.current = new CubeView(host.current, colours);
       view.current.canvas.addEventListener("webglcontextlost", () => setWebgl(false));
       (host.current as any).cubeView = view.current;
     } catch {
@@ -110,7 +112,7 @@ export const Viewport = ({ facelets, move, height, texts: t, reducedMotion, onTu
           className="sc-viewport absolute inset-0 focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-sky-700" />
       ) : (
         <div data-testid="no-webgl" className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center text-sm text-slate-700">
-          <Net facelets={facelets} cell={24} label={t.cube} testId="net" />
+          <Net facelets={facelets} cell={24} label={t.cube} testId="net" colours={colours} />
           <p className="m-0 max-w-[46ch]">{t.noWebgl}</p>
         </div>
       )}

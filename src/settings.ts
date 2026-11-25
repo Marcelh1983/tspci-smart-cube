@@ -1,4 +1,5 @@
 // The data- attributes of the interaction, as text, into checked settings.
+import { Top, topOf } from "./cube";
 import { Language, languageOf } from "./texts";
 
 export type Settings = {
@@ -12,6 +13,8 @@ export type Settings = {
   /** Seconds: a solve this fast or faster scores 1; 0: any solve scores 1. */
   targetTime: number;
   allowVirtual: boolean;
+  /** The colour the candidate holds on top: white, or yellow (green in front either way). */
+  top: Top;
   height: number;
   language: Language;
 };
@@ -34,6 +37,7 @@ export const parseSettings = (p: Record<string, unknown>): Settings => ({
   attempts: intOr(p.attempts, 3, 1, 12),
   targetTime: numberOr(p.targetTime, 0, 0, 3600),
   allowVirtual: p.allowVirtual === undefined ? true : isTrue(p.allowVirtual),
+  top: topOf(p.top),
   height: intOr(p.height, 380, 240, 800),
   language: languageOf(p.language),
 });

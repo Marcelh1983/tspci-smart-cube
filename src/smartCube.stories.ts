@@ -225,6 +225,30 @@ export const GiveUp: Story = {
   },
 };
 
+export const YellowOnTop: Story = {
+  args: { properties: { seed: "yellow", inspection: "0", top: "yellow" } },
+  play: async ({ canvasElement, step }) => {
+    const mounted = await openPci(canvasElement);
+    const { canvas, pci } = mounted;
+    const fills = () => [...canvas.getByTestId("target").querySelectorAll("rect")].map((r) => r.getAttribute("fill"));
+    await step("the same scramble as with white on top, as seen with yellow on top and green in front", async () => {
+      expect(chips(mounted)[0]).toHaveTextContent(formatMoves([scrambleFor("yellow", 20)[0]]));
+      // the target net: U (stickers 0–8) yellow with its centre, D (27–35) white, R (9–17) orange, F (18–26) green
+      const f = fills();
+      expect(f[4]).toBe("#ffd500");
+      expect(f[31]).toBe("#f8fafc");
+      expect(f[13]).toBe("#ff6a13");
+      expect(f[22]).toBe("#009b48");
+    });
+    await step("a result says which way up the cube was held", async () => {
+      await userEvent.click(canvas.getByRole("button", { name: "Scramble it for me" }));
+      await userEvent.click(canvas.getByRole("button", { name: "Start" }));
+      await userEvent.click(canvas.getByRole("button", { name: "Give up" }));
+      expect(JSON.parse(fields(pci.getResponse()).results)[0]).toMatchObject({ top: "yellow", scramble: formatMoves(scrambleFor("yellow", 20)) });
+    });
+  },
+};
+
 export const TargetTime: Story = {
   args: { properties: { seed: "fast", targetTime: "0.001", attempts: "1", scrambleLength: "6" } },
   play: async ({ canvasElement, step }) => {
