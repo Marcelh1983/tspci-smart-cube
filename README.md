@@ -11,6 +11,10 @@ is turned, gives a scramble from a seed and guides the candidate through it, and
 candidate presses Start: an inspection countdown, then a timer that stops when the cube is solved. Made with
 [tspci](https://github.com/Citolab/tspci).
 
+**[Try it in your browser](https://marcelh1983.github.io/tspci-smart-cube/)**: the demo page runs the PCI on its own,
+with the on-screen cube or a GiiKER cube (Chrome or Edge). Add `?seed=…` to the address to share the same scrambles.
+The page is `demo/index.html`, published to GitHub Pages by `.github/workflows/pages.yml` on every push to `main`.
+
 <p align="center">
   <img src="./example.png" alt="A scrambled cube in 3D next to an inspection countdown at 13 seconds, buttons to turn the on-screen cube, and an empty results table" width="560">
 </p>

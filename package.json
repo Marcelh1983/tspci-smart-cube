@@ -65,7 +65,7 @@
     "preprod": "npm test && npm run test:stories",
     "prod": "tspci",
     "watch": "tspci --watch",
-    "test": "node --no-warnings --test test/",
+    "test": "node --no-warnings --test test/*.test.ts",
     "package-tao": "tspci --target tao",
     "package-qti3": "tspci --target qti3",
     "prepack": "npm run prod && npm run package-tao",
